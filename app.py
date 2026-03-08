@@ -129,26 +129,31 @@ fig2 = historical_chart(data, strike1, strike2, strike3)
 st.plotly_chart(fig2, use_container_width=True)
 
 # -------------------------
-# TradingView
+# Gráfico Yahoo Finance
 # -------------------------
 
-st.subheader("Gráfico TradingView")
+st.subheader("Gráfico do Ativo (Yahoo Finance)")
 
-tv_tickers = {
+import plotly.graph_objects as go
 
-    "Soja CBOT": "CBOT:ZS1!",
-    "Milho CBOT": "CBOT:ZC1!"
+fig3 = go.Figure()
 
-}
+fig3.add_trace(
+    go.Candlestick(
+        x=data.index,
+        open=data["Open"],
+        high=data["High"],
+        low=data["Low"],
+        close=data["Close"],
+        name="Preço"
+    )
+)
 
-tv_symbol = tv_tickers[ativo]
+fig3.update_layout(
+    title=f"{ativo} - Últimos 6 meses",
+    xaxis_title="Data",
+    yaxis_title="Preço",
+    height=500
+)
 
-tradingview_widget = f"""
-<iframe
-src="https://s.tradingview.com/widgetembed/?symbol={tv_symbol}&interval=D"
-width="100%"
-height="500">
-</iframe>
-"""
-
-st.components.v1.html(tradingview_widget, height=500)
+st.plotly_chart(fig3, use_container_width=True)
