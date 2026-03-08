@@ -16,11 +16,9 @@ def payoff_chart(prices, results):
     fig.add_hline(y=0)
 
     fig.update_layout(
-
         title="Payoff da Estrutura",
         xaxis_title="Preço do Ativo",
         yaxis_title="Resultado"
-
     )
 
     return fig
@@ -43,9 +41,7 @@ def historical_chart(data, strike1, strike2, strike3):
     fig.add_hline(y=strike3)
 
     fig.update_layout(
-
         title="Histórico + Strikes"
-
     )
 
     return fig
