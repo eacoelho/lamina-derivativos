@@ -2,7 +2,9 @@ import numpy as np
 
 def calculate_payoff(estrutura, strike1, strike2, strike3, custo):
 
-    prices = np.linspace(strike1*0.6, strike3*1.4, 200)
+    max_strike = max(strike1, strike2, strike3)
+
+    prices = np.linspace(max_strike*0.6, max_strike*1.4, 200)
 
     if estrutura == "Long Put":
 
