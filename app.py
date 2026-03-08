@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import yfinance as yf
+import plotly.graph_objects as go
 
 from payoff import calculate_payoff
 from charts import payoff_chart, historical_chart
@@ -10,9 +11,9 @@ st.set_page_config(layout="wide")
 
 st.title("Lâmina de Estrutura de Derivativos Agrícolas")
 
-# -------------------------
-# Inputs
-# -------------------------
+# --------------------------------
+# INPUTS
+# --------------------------------
 
 ativo = st.selectbox(
     "Ativo",
@@ -37,37 +38,35 @@ strike3 = st.number_input("Strike 3", value=120.0)
 
 custo = st.number_input("Custo da Estrutura", value=0.0)
 
-# -------------------------
-# Tickers
-# -------------------------
+# --------------------------------
+# TICKERS
+# --------------------------------
 
 tickers = {
-
     "Soja CBOT": "ZS=F",
     "Milho CBOT": "ZC=F"
-
 }
 
 ticker = tickers[ativo]
 
-# -------------------------
-# Dados de mercado
-# -------------------------
+# --------------------------------
+# DADOS DE MERCADO
+# --------------------------------
 
-data = yf.download(ticker, period="6mo")
+data = yf.download(ticker, period="6mo", auto_adjust=True)
 
 if data.empty:
 
-    st.error("Não foi possível carregar dados de mercado.")
+    st.error("Erro ao carregar dados do Yahoo Finance.")
     st.stop()
 
 preco_atual = float(data["Close"].iloc[-1])
 
-# -------------------------
-# Payoff
-# -------------------------
+# --------------------------------
+# PAYOFF
+# --------------------------------
 
-prices, results = calculate_payoff(
+prices, results, breakeven = calculate_payoff(
     estrutura,
     strike1,
     strike2,
@@ -75,11 +74,15 @@ prices, results = calculate_payoff(
     custo
 )
 
-# -------------------------
-# Layout
-# -------------------------
+# --------------------------------
+# LAYOUT PRINCIPAL
+# --------------------------------
 
 col1, col2 = st.columns([1,2])
+
+# --------------------------------
+# COLUNA ESQUERDA
+# --------------------------------
 
 with col1:
 
@@ -94,7 +97,8 @@ with col1:
             "Strike 2",
             "Strike 3",
             "Custo",
-            "Preço Atual"
+            "Preço Atual",
+            "Breakeven"
         ],
 
         "Valor":[
@@ -104,41 +108,45 @@ with col1:
             strike2,
             strike3,
             custo,
-            round(preco_atual,2)
+            round(preco_atual,2),
+            round(breakeven,2)
         ]
 
     })
 
     st.table(tabela)
 
+# --------------------------------
+# PAYOFF
+# --------------------------------
+
 with col2:
 
     st.subheader("Payoff da Estrutura")
 
-    fig = payoff_chart(prices, results)
-    st.plotly_chart(fig, use_container_width=True)
+    fig_payoff = payoff_chart(prices, results)
 
-# -------------------------
-# Histórico
-# -------------------------
+    st.plotly_chart(fig_payoff, use_container_width=True)
 
-st.subheader("Histórico do Contrato (6 meses)")
+# --------------------------------
+# HISTÓRICO + STRIKES
+# --------------------------------
 
-fig2 = historical_chart(data, strike1, strike2, strike3)
+st.subheader("Histórico do Ativo + Strikes")
 
-st.plotly_chart(fig2, use_container_width=True)
+fig_hist = historical_chart(data, strike1, strike2, strike3)
 
-# -------------------------
-# Gráfico Yahoo Finance
-# -------------------------
+st.plotly_chart(fig_hist, use_container_width=True)
 
-st.subheader("Gráfico do Ativo (Yahoo Finance)")
+# --------------------------------
+# CANDLESTICK YAHOO FINANCE
+# --------------------------------
 
-import plotly.graph_objects as go
+st.subheader("Gráfico Candlestick (Yahoo Finance)")
 
-fig3 = go.Figure()
+fig_candle = go.Figure()
 
-fig3.add_trace(
+fig_candle.add_trace(
     go.Candlestick(
         x=data.index,
         open=data["Open"],
@@ -149,11 +157,38 @@ fig3.add_trace(
     )
 )
 
-fig3.update_layout(
+fig_candle.update_layout(
     title=f"{ativo} - Últimos 6 meses",
     xaxis_title="Data",
     yaxis_title="Preço",
-    height=500
+    height=500,
+    template="plotly_white"
 )
 
-st.plotly_chart(fig3, use_container_width=True)
+st.plotly_chart(fig_candle, use_container_width=True)
+
+# --------------------------------
+# SIMULAÇÃO DE CENÁRIOS
+# --------------------------------
+
+st.subheader("Simulação de Cenários")
+
+cenarios = [-0.20,-0.10,0,0.10,0.20]
+
+resultados = []
+
+for c in cenarios:
+
+    preco = preco_atual * (1+c)
+
+    payoff = np.interp(preco, prices, results)
+
+    resultados.append({
+        "Cenário": f"{int(c*100)}%",
+        "Preço": round(preco,2),
+        "Resultado": round(payoff,2)
+    })
+
+df = pd.DataFrame(resultados)
+
+st.table(df)
