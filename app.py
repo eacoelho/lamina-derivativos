@@ -16,7 +16,7 @@ st.title("Lâmina de Estrutura de Derivativos Agrícolas")
 
 ativo = st.selectbox(
     "Ativo",
-    ["Soja CBOT", "Milho CBOT", "Milho B3"]
+    ["Soja CBOT", "Milho CBOT"]
 )
 
 estrutura = st.selectbox(
@@ -34,6 +34,7 @@ estrutura = st.selectbox(
 strike1 = st.number_input("Strike 1", value=100.0)
 strike2 = st.number_input("Strike 2", value=110.0)
 strike3 = st.number_input("Strike 3", value=120.0)
+
 custo = st.number_input("Custo da Estrutura", value=0.0)
 
 # -------------------------
@@ -41,9 +42,10 @@ custo = st.number_input("Custo da Estrutura", value=0.0)
 # -------------------------
 
 tickers = {
+
     "Soja CBOT": "ZS=F",
-    "Milho CBOT": "ZC=F",
-    "Milho B3": "CCM=F"
+    "Milho CBOT": "ZC=F"
+
 }
 
 ticker = tickers[ativo]
@@ -53,6 +55,12 @@ ticker = tickers[ativo]
 # -------------------------
 
 data = yf.download(ticker, period="6mo")
+
+if data.empty:
+
+    st.error("Não foi possível carregar dados de mercado.")
+    st.stop()
+
 preco_atual = float(data["Close"].iloc[-1])
 
 # -------------------------
@@ -129,8 +137,7 @@ st.subheader("Gráfico TradingView")
 tv_tickers = {
 
     "Soja CBOT": "CBOT:ZS1!",
-    "Milho CBOT": "CBOT:ZC1!",
-    "Milho B3": "BMFBOVESPA:CCM1!"
+    "Milho CBOT": "CBOT:ZC1!"
 
 }
 
